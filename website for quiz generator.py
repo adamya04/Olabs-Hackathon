@@ -37,7 +37,7 @@ for difficulty in range(NUM_DIFFICULTIES):
 
 concept_mastery = defaultdict(list)
 
-API_KEY = "AIzaSyCzmpRdo3Qo7VT_eb5R9GJgey_HnO5xAc0"
+API_KEY = "YOUR API KEY"
 genai.configure(api_key=API_KEY)
 translator = Translator()
 
