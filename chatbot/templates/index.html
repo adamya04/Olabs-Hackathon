@@ -1,1 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OLabs Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="chat-container">
+        <h1>OLabs Chatbot</h1>
+        <div id="chat-window" class="chat-window"></div>
+        <div class="input-container">
+            <textarea id="user-input" placeholder="Type your query here..." rows="2"></textarea>
+            <button onclick="sendMessage()">Send</button>
+            <button onclick="toggleVoice()">Toggle Voice</button>
+            <button id="weak-roadmap" onclick="getWeakRoadmap()" disabled>Weak Roadmap</button>
+            <button id="next-quiz" onclick="getNextQuiz()" disabled>Next Quiz</button>
+        </div>
+        <div id="feedback-container" class="feedback-container" style="display: none;">
+            <p>Did this help?</p>
+            <button onclick="sendFeedback('yes')">Yes</button>
+            <button onclick="sendFeedback('no')">No</button>
+        </div>
+        <div id="quiz-selection-container" class="quiz-selection-container" style="display: none;">
+            <p>Select a subject by number or name:</p>
+            <input type="text" id="quiz-selection-input" placeholder="Enter number or subject">
+            <button onclick="submitQuizSelection()">Submit</button>
+        </div>
+    </div>
 
+    <script>
+        let currentState = null;
+        let currentAction = null;
+
+        function addMessage(message, isBot = false) {
+            const chatWindow = document.getElementById('chat-window');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isBot ? 'bot-message' : 'user-message';
+            messageDiv.innerHTML = message.replace(/\n/g, '<br>');
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function sendMessage() {
+            const userInput = document.getElementById('user-input').value.trim();
+            if (!userInput) return;
+
+            addMessage(userInput);
+            document.getElementById('user-input').value = '';
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userInput, user_id: 'default_user' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage(data.response, true);
+                currentState = data.state;
+                currentAction = data.action;
+
+                document.getElementById('feedback-container').style.display = data.feedback_required ? 'block' : 'none';
+                document.getElementById('quiz-selection-container').style.display = data.quiz_selection ? 'block' : 'none';
+
+                document.getElementById('weak-roadmap').disabled = !data.response.includes('Quiz Result');
+                document.getElementById('next-quiz').disabled = !data.response.includes('Quiz Result');
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function submitQuizSelection() {
+            const selection = document.getElementById('quiz-selection-input').value.trim();
+            if (!selection) return;
+
+            fetch('/select_quiz_topic', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ selection: selection, user_id: 'default_user' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage(data.response, true);
+                document.getElementById('quiz-selection-container').style.display = 'none';
+                document.getElementById('weak-roadmap').disabled = false;
+                document.getElementById('next-quiz').disabled = false;
+            });
+        }
+
+        function sendFeedback(feedback) {
+            fetch('/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ feedback: feedback, state: currentState, action: currentAction })
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage(data.response, true);
+                document.getElementById('feedback-container').style.display = 'none';
+            });
+        }
+
+        function toggleVoice() {
+            fetch('/toggle_voice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => addMessage(data.response, true));
+        }
+
+        function getWeakRoadmap() {
+            fetch('/weak_roadmap', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => addMessage(data.response, true));
+        }
+
+        function getNextQuiz() {
+            fetch('/next_quiz', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => addMessage(data.response, true));
+        }
+
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        document.getElementById('quiz-selection-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitQuizSelection();
+            }
+        });
+
+        addMessage("Welcome to OLabs Chatbot! How can I assist you today?", true);
+    </script>
+</body>
+</html>
