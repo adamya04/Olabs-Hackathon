@@ -315,7 +315,6 @@ def main():
     update_q_table(current_state_index, action, reward, next_state_index, LEARNING_RATE)
 
     reason = "Score too low, adjusting to easier level" if user_score < 5 else "Good score, maintaining level" if user_score < 8 else "Excellent score, increasing challenge"
-    print(f"Next Difficulty: {DIFFICULTY_LEVELS[next_difficulty]} ({reason})")
 
 if __name__ == "__main__":
     main()
