@@ -21,7 +21,7 @@ from quiz_model import QuizModel
 from googletrans import Translator, LANGUAGES
 
 # Configure Gemini API
-genai.configure(api_key="AIzaSyCQ6DRlyk006Zq7JaEQs30N4jGfyQFQm0A")
+genai.configure(api_key="YOUR API KEY")
 gemini_model = genai.GenerativeModel("gemini-2.0-flash")
 
 # Load SentenceTransformer model
